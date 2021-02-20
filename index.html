@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>ПЭ_Горбунов_Уметбаев_1</title>
+</head>
+<body>
+    <div style="display: flex">
+        <div style="margin-left: 1rem">
+            <label>Количество факторов</label><br>
+            <input type="number" min="2" max="10" name="numFactors" onmousedown="setMaxValuePartReplica()" onmouseup="setMaxValuePartReplica()" value="2" onkeydown="return false">
+        </div>
+        <div style="margin-left: 1rem">
+            <label>Количество уровней варьирования</label><br>
+            <input type="number" min="2" max="5" name="numLevelVaryingFactors" onmousedown="setMaxValuePartReplica()" onmouseup="setMaxValuePartReplica()" value="2" onkeydown="return false">
+        </div>
+        <div style="margin-left: 1rem">
+            <label>Часть реплики (1/2^n)</label><br>
+            <input type="number" min="1" max="1" name="numPartReplica" value="1" onkeydown="return false">
+        </div>
+        <button style="margin-left: 1rem;" onclick="getAllResultsAndDrawTables()">Рассчитать</button>
+    </div>
+
+    <div style="margin: 1rem;">
+        <table border="" id="FullFE" style="text-align: center"></table>
+        <table border="" style="text-align: center; margin-top: 1rem" id="FractionalFE" style="text-align: center"></table>
+    </div>
+
+</body>
+<script>
+    class Matrix {
+        matrixFactors = []; matrixFactorsInteraction = [];
+        numFactors; countExp; numLevelVaryingFactors;
+        constructor(numFactors, numLevelVaryingFactors, countExp) {
+            this.numFactors = numFactors;
+            this.numLevelVaryingFactors = numLevelVaryingFactors;
+            this.countExp = countExp;
+            this.buildMatrixFactors();
+            this.buildMatrixFactorsInteraction();
+            this.addColZeroLvlInMatrixFactors();
+        }
+
+
+
+        buildMatrixFactors() {
+            for (let i = 0; i < this.countExp; i++)
+                this.matrixFactors[i] = [];
+
+            for (let i = 0; i < this.countExp; i++) {
+                let tmp = i;
+                for (let j = 0; j < this.numFactors; j++) {
+                    this.matrixFactors[i][j] = (tmp & 1) === 0 ? -1 : 1;
+                    tmp >>= 1;
+                }
+            }
+        }
+
+        buildMatrixFactorsInteraction() {
+            for(let k = 0; k < this.countExp; k++) {
+                this.matrixFactorsInteraction[k] = [];
+                for(let i = 0; i < this.numFactors; i++) {
+                    for (let j = i + 1; j < this.numFactors; j++) {
+                        this.matrixFactorsInteraction[k].push(this.matrixFactors[k][i] * this.matrixFactors[k][j]);
+                    }
+                }
+            }
+        }
+
+        getDataMatrixFactorsInteraction() {
+            return this.matrixFactorsInteraction;
+        }
+
+        addColZeroLvlInMatrixFactors() {
+            for(let i = 0; i < this.countExp; i++)
+                this.matrixFactors[i].unshift(1);
+        }
+
+        getDataMatrixFactors() {
+            return this.matrixFactors;
+        }
+
+
+        Factorial(x) {
+            return (x === 0) ? 1 : x * this.Factorial(x - 1);
+        }
+
+        getCountPossibleInteractions(numFactors, numLevelVaryingFactors) {
+            return this.Factorial(numFactors)/(this.Factorial(numLevelVaryingFactors) * numLevelVaryingFactors(numFactors - numLevelVaryingFactors));
+        }
+    }
+</script>
+<script>
+
+    function setMaxValuePartReplica() {
+        document.querySelector('input[name="numPartReplica"]').setAttribute('max', (document.querySelector('input[name="numFactors"]').value - 1));
+        document.querySelector('input[name="numPartReplica"]').value = 1;
+    }
+
+    function getAllResultsAndDrawTables() {
+        getResultFullFEAndDrawTable();
+        getResultFractionalFEAndDrawTable();
+    }
+
+    function getResultFullFEAndDrawTable() {
+        let numFactors = document.querySelector('input[name="numFactors"]').value;
+        let numLevelVaryingFactors = document.querySelector('input[name="numLevelVaryingFactors"]').value;
+        let countExp = getCountExpForFullFE(numFactors, numLevelVaryingFactors);
+
+        let matrix = new Matrix(numFactors, numLevelVaryingFactors, countExp);
+        let matrixFactors = matrix.getDataMatrixFactors(),
+            matrixFactorsInteraction = matrix.getDataMatrixFactorsInteraction();
+
+        drawTable(matrixFactors, matrixFactorsInteraction, numFactors, "FullFE")
+    }
+
+    function getResultFractionalFEAndDrawTable() {
+        let numFactors = document.querySelector('input[name="numFactors"]').value;
+        let numLevelVaryingFactors = document.querySelector('input[name="numLevelVaryingFactors"]').value;
+        let numPartReplica = document.querySelector('input[name="numPartReplica"]').value;
+        let countExp = getCountExpForFractionalFE(numFactors, numLevelVaryingFactors, numPartReplica);
+
+        let matrix = new Matrix(numFactors, numLevelVaryingFactors, countExp);
+        let matrixFactors = matrix.getDataMatrixFactors(),
+            matrixFactorsInteraction = matrix.getDataMatrixFactorsInteraction();
+
+        drawTable(matrixFactors, matrixFactorsInteraction, numFactors, "FractionalFE")
+    }
+
+    function getCountExpForFullFE (numFactors, numLevelVaryingFactors) {
+        return Math.pow(numLevelVaryingFactors, numFactors);
+    }
+
+    function getCountExpForFractionalFE (numFactors, numLevelVaryingFactors, numPartReplica) {
+        return Math.pow(numLevelVaryingFactors, numFactors - numPartReplica);
+    }
+
+    function drawTable(matrixFactors, matrixFactorsInteraction, numFactors, idTable) {
+        let tag = '<thead>' +
+            '                <tr>' +
+            '                    <th rowspan="3">Номер опыта</th>' +
+            '                    <th colspan="' + (matrixFactors[0].length + matrixFactorsInteraction[0].length) +'">Матрица планирования ('+ idTable +') </th>' +
+            '                    <th>Вектор результатов</th>' +
+            '                </tr>' +
+            '                <tr>' +
+            '                    <th colspan="' + (matrixFactors[0].length) +'">Факторы</th>' +
+            '                    <th colspan="' + (matrixFactorsInteraction[0].length) +'">Факторы взаимодействия</th>' +
+            '                    <th rowspan="2">Y</th>' +
+            '                </tr>' +
+            '                <tr>';
+
+        for(let i = 0; i <= numFactors; i++) {
+            tag += '<th>' + "X" + i + '</th>'
+        }
+
+        for(let i = 0; i < numFactors; i++) {
+            for (let j = i + 1; j < numFactors; j++) {
+                tag += '<th>' + "X" + (i + 1) + "X" + (j + 1) + '</th>'
+            }
+        }
+
+        tag += '</tr></thead>';
+
+        tag += '<tbody>';
+        for(let i = 0; i < matrixFactors.length; i++) {
+            tag+= '<tr><td>' + (i + 1) + '</td>';
+            for(let j = 0; j < matrixFactors[i].length; j++) {
+                tag+= '<td>'+ matrixFactors[i][j] +'</td>';
+            }
+
+            for(let j = 0; j < matrixFactorsInteraction[i].length; j++) {
+                tag+= '<td>'+ matrixFactorsInteraction[i][j] +'</td>';
+            }
+
+            tag+= '<td>'+ "Y" + (i + 1) +'</td></tr>';
+        }
+        tag += '</tbody>';
+
+        document.getElementById(idTable).innerHTML = tag;
+    }
+
+</script>
+
+</html>
