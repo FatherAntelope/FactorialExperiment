@@ -19,7 +19,11 @@
         </div>
         <div style="margin-left: 1rem">
             <label>Часть реплики (1/2^n)</label><br>
-            <input type="number" min="1" max="1" name="numPartReplica" value="1" onkeydown="return false">
+            <input type="number" min="1" max="1" name="numPartReplica" value="1" onmousedown="setMaxValueChoicePartReplica()" onmouseup="setMaxValueChoicePartReplica()" onkeydown="return false">
+        </div>
+        <div style="margin-left: 1rem">
+            <label>Выбранная часть</label><br>
+            <input type="number" min="1" max="1" name="numChoicePartReplica" value="1" onkeydown="return false">
         </div>
         <button style="margin-left: 1rem;" onclick="getAllResultsAndDrawTables()">Рассчитать</button>
     </div>
@@ -69,6 +73,29 @@
             }
         }
 
+        getChoicePartReplicaForFactors(countExp, numChoicePartReplica) {
+            let tmpMatrix = [];
+            for (let i = 0; i < countExp; i++)
+                tmpMatrix[i] = [];
+            let k = 0;
+            for(let i = countExp * (numChoicePartReplica - 1); i < countExp * numChoicePartReplica; i++)
+                tmpMatrix[k++] = this.matrixFactors[i];
+
+            return tmpMatrix;
+
+        }
+
+        getChoicePartReplicaForFactorsInteraction(countExp, numChoicePartReplica) {
+            let tmpMatrix = [];
+            for (let i = 0; i < countExp; i++)
+                tmpMatrix[i] = [];
+            let k = 0;
+            for(let i = countExp * (numChoicePartReplica - 1); i < countExp * numChoicePartReplica; i++)
+                tmpMatrix[k++] = this.matrixFactorsInteraction[i];
+
+            return tmpMatrix;
+        }
+
         getDataMatrixFactorsInteraction() {
             return this.matrixFactorsInteraction;
         }
@@ -88,7 +115,7 @@
         }
 
         getCountPossibleInteractions(numFactors, numLevelVaryingFactors) {
-            return this.Factorial(numFactors)/(this.Factorial(numLevelVaryingFactors) * numLevelVaryingFactors(numFactors - numLevelVaryingFactors));
+            return this.Factorial(numFactors)/(this.Factorial(numLevelVaryingFactors) * this.Factorial(numFactors - numLevelVaryingFactors));
         }
     }
 </script>
@@ -99,34 +126,49 @@
         document.querySelector('input[name="numPartReplica"]').value = 1;
     }
 
+    function setMaxValueChoicePartReplica() {
+        document.querySelector('input[name="numChoicePartReplica"]').setAttribute('max', (Math.pow(2, document.querySelector('input[name="numPartReplica"]').value)));
+        document.querySelector('input[name="numChoicePartReplica"]').value = 1;
+    }
+
     function getAllResultsAndDrawTables() {
         getResultFullFEAndDrawTable();
         getResultFractionalFEAndDrawTable();
     }
 
+    let numFactors,
+        numLevelVaryingFactors,
+        numPartReplica,
+        numChoicePartReplica,
+        countExpForFullFE,
+        countExpForFractionalFE,
+        matrix,
+        matrixFactorsFullFE,
+        matrixFactorsFractionalFE,
+        matrixFactorsInteractionFullFE,
+        matrixFactorsInteractionFractionalFE;
+
     function getResultFullFEAndDrawTable() {
-        let numFactors = document.querySelector('input[name="numFactors"]').value;
-        let numLevelVaryingFactors = document.querySelector('input[name="numLevelVaryingFactors"]').value;
-        let countExp = getCountExpForFullFE(numFactors, numLevelVaryingFactors);
+        numFactors = document.querySelector('input[name="numFactors"]').value;
+        numLevelVaryingFactors = document.querySelector('input[name="numLevelVaryingFactors"]').value;
+        countExpForFullFE = getCountExpForFullFE(numFactors, numLevelVaryingFactors);
 
-        let matrix = new Matrix(numFactors, numLevelVaryingFactors, countExp);
-        let matrixFactors = matrix.getDataMatrixFactors(),
-            matrixFactorsInteraction = matrix.getDataMatrixFactorsInteraction();
+        matrix = new Matrix(numFactors, numLevelVaryingFactors, countExpForFullFE);
+        matrixFactorsFullFE = matrix.getDataMatrixFactors();
+        matrixFactorsInteractionFullFE = matrix.getDataMatrixFactorsInteraction();
 
-        drawTable(matrixFactors, matrixFactorsInteraction, numFactors, "FullFE")
+        drawTable(matrixFactorsFullFE, matrixFactorsInteractionFullFE, numFactors, "FullFE")
+        console.log(matrix.getCountPossibleInteractions(numFactors, numLevelVaryingFactors));
     }
 
     function getResultFractionalFEAndDrawTable() {
-        let numFactors = document.querySelector('input[name="numFactors"]').value;
-        let numLevelVaryingFactors = document.querySelector('input[name="numLevelVaryingFactors"]').value;
-        let numPartReplica = document.querySelector('input[name="numPartReplica"]').value;
-        let countExp = getCountExpForFractionalFE(numFactors, numLevelVaryingFactors, numPartReplica);
+        numPartReplica = document.querySelector('input[name="numPartReplica"]').value;
+        numChoicePartReplica = document.querySelector('input[name="numChoicePartReplica"]').value;
+        countExpForFractionalFE = getCountExpForFractionalFE(numFactors, numLevelVaryingFactors, numPartReplica);
+        matrixFactorsFractionalFE = matrix.getChoicePartReplicaForFactors(countExpForFractionalFE, numChoicePartReplica);
+        matrixFactorsInteractionFractionalFE = matrix.getChoicePartReplicaForFactorsInteraction(countExpForFractionalFE, numChoicePartReplica);
 
-        let matrix = new Matrix(numFactors, numLevelVaryingFactors, countExp);
-        let matrixFactors = matrix.getDataMatrixFactors(),
-            matrixFactorsInteraction = matrix.getDataMatrixFactorsInteraction();
-
-        drawTable(matrixFactors, matrixFactorsInteraction, numFactors, "FractionalFE")
+        drawTable(matrixFactorsFractionalFE, matrixFactorsInteractionFractionalFE, numFactors, "FractionalFE")
     }
 
     function getCountExpForFullFE (numFactors, numLevelVaryingFactors) {
