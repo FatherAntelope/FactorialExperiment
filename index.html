@@ -36,7 +36,9 @@
 </body>
 <script>
     class Matrix {
+        //матрица факторов и матрица факторов взаимодействия
         matrixFactors = []; matrixFactorsInteraction = [];
+        //количество факторов, количество опытов, количество уровней варьирования
         numFactors; countExp; numLevelVaryingFactors;
         constructor(numFactors, numLevelVaryingFactors, countExp) {
             this.numFactors = numFactors;
@@ -47,8 +49,7 @@
             this.addColZeroLvlInMatrixFactors();
         }
 
-
-
+        //построение матрицы факторов
         buildMatrixFactors() {
             for (let i = 0; i < this.countExp; i++)
                 this.matrixFactors[i] = [];
@@ -62,6 +63,7 @@
             }
         }
 
+        //построение матрицы факторов взаимодействия
         buildMatrixFactorsInteraction() {
             for(let k = 0; k < this.countExp; k++) {
                 this.matrixFactorsInteraction[k] = [];
@@ -73,6 +75,7 @@
             }
         }
 
+        //расчет выбранной части реплики для ДФЭ от ПФЭ (факторы)
         getChoicePartReplicaForFactors(countExp, numChoicePartReplica) {
             let tmpMatrix = [];
             for (let i = 0; i < countExp; i++)
@@ -85,6 +88,7 @@
 
         }
 
+        //расчет выбранной части реплики для ДФЭ от ПФЭ (факторы взаимодействия)
         getChoicePartReplicaForFactorsInteraction(countExp, numChoicePartReplica) {
             let tmpMatrix = [];
             for (let i = 0; i < countExp; i++)
@@ -96,31 +100,33 @@
             return tmpMatrix;
         }
 
-        getDataMatrixFactorsInteraction() {
-            return this.matrixFactorsInteraction;
+        Factorial(x) {
+            return (x === 0) ? 1 : x * this.Factorial(x - 1);
         }
 
+        //расчет числа всевозможных взаимодействий
+        getCountPossibleInteractions(numFactors, numLevelVaryingFactors) {
+            return this.Factorial(numFactors)/(this.Factorial(numLevelVaryingFactors) * this.Factorial(numFactors - numLevelVaryingFactors));
+        }
+
+        //добавление нулевого вектор-столбца к матрице факторов
         addColZeroLvlInMatrixFactors() {
             for(let i = 0; i < this.countExp; i++)
                 this.matrixFactors[i].unshift(1);
         }
 
+        //возврат матрицы факторов взаимодействия
+        getDataMatrixFactorsInteraction() {
+            return this.matrixFactorsInteraction;
+        }
+
+        //возврат матрицы факторов
         getDataMatrixFactors() {
             return this.matrixFactors;
-        }
-
-
-        Factorial(x) {
-            return (x === 0) ? 1 : x * this.Factorial(x - 1);
-        }
-
-        getCountPossibleInteractions(numFactors, numLevelVaryingFactors) {
-            return this.Factorial(numFactors)/(this.Factorial(numLevelVaryingFactors) * this.Factorial(numFactors - numLevelVaryingFactors));
         }
     }
 </script>
 <script>
-
     function setMaxValuePartReplica() {
         document.querySelector('input[name="numPartReplica"]').setAttribute('max', (document.querySelector('input[name="numFactors"]').value - 1));
         document.querySelector('input[name="numPartReplica"]').value = 1;
@@ -129,11 +135,6 @@
     function setMaxValueChoicePartReplica() {
         document.querySelector('input[name="numChoicePartReplica"]').setAttribute('max', (Math.pow(2, document.querySelector('input[name="numPartReplica"]').value)));
         document.querySelector('input[name="numChoicePartReplica"]').value = 1;
-    }
-
-    function getAllResultsAndDrawTables() {
-        getResultFullFEAndDrawTable();
-        getResultFractionalFEAndDrawTable();
     }
 
     let numFactors,
@@ -148,6 +149,12 @@
         matrixFactorsInteractionFullFE,
         matrixFactorsInteractionFractionalFE;
 
+    function getAllResultsAndDrawTables() {
+        getResultFullFEAndDrawTable();
+        getResultFractionalFEAndDrawTable();
+    }
+
+    //Построение ПФЭ
     function getResultFullFEAndDrawTable() {
         numFactors = document.querySelector('input[name="numFactors"]').value;
         numLevelVaryingFactors = document.querySelector('input[name="numLevelVaryingFactors"]').value;
@@ -161,6 +168,7 @@
         console.log(matrix.getCountPossibleInteractions(numFactors, numLevelVaryingFactors));
     }
 
+    //Построение ПФЭ от ДФЭ
     function getResultFractionalFEAndDrawTable() {
         numPartReplica = document.querySelector('input[name="numPartReplica"]').value;
         numChoicePartReplica = document.querySelector('input[name="numChoicePartReplica"]').value;
@@ -171,10 +179,12 @@
         drawTable(matrixFactorsFractionalFE, matrixFactorsInteractionFractionalFE, numFactors, "FractionalFE")
     }
 
+    //расчет числа опытов для ПФЭ
     function getCountExpForFullFE (numFactors, numLevelVaryingFactors) {
         return Math.pow(numLevelVaryingFactors, numFactors);
     }
 
+    //расчет числа опытов для ДФЭ
     function getCountExpForFractionalFE (numFactors, numLevelVaryingFactors, numPartReplica) {
         return Math.pow(numLevelVaryingFactors, numFactors - numPartReplica);
     }
